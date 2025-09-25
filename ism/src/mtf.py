@@ -77,7 +77,7 @@ class mtf:
 
         return Hsys
 
-    def freq2d(self,nlines, ncolumns, D, lambd, focal, w):
+    def freq2d(self, nlines, ncolumns, D, lambd, focal, w):
         """
         Calculate the relative frequencies 2D (for the diffraction MTF)
         :param nlines: Lines of the TOA
@@ -92,6 +92,28 @@ class mtf:
         :return fnAlt: 1D normalised frequencies 2D ALT (f/(1/w))
         """
         #TODO
+        # Section 7.1.3.19.1. 2D frequencies array
+        fstepAlt = 1 / nlines / w
+        fstepAct = 1 / ncolumns / w
+
+        eps = 1e-10
+        fAlt = np.arange(-1 / (2 * w), 1 / (2 * w) - eps, fstepAlt)
+        fAct = np.arange(-1 / (2 * w), 1 / (2 * w) - eps, fstepAct)
+
+        cut_off = D / (lambd * focal)
+
+        frAlt = fAlt / cut_off
+        frAct = fAct /  cut_off
+
+        fnAlt = fAlt / (1 / w)
+        fnAct = fAct / (1 / w)
+
+        [frAltxx, frActxx] = np.meshgrid(frAlt, frAct, indexing='ij')
+        fr2D = np.sqrt(frAltxx * frAltxx + frActxx * frActxx)
+
+        [fnAltxx, fnActxx] = np.meshgrid(fnAlt, fnAct, indexing='ij')
+        fn2D = np.sqrt(fnAltxx * fnAltxx + fnActxx * fnActxx)
+
         return fn2D, fr2D, fnAct, fnAlt
 
     def mtfDiffract(self,fr2D):
