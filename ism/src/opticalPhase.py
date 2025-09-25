@@ -93,6 +93,7 @@ class opticalPhase(initIsm):
         :return: TOA image in irradiances [mW/m2]
         """
         # TODO
+        toa = Tr * toa * ((np.pi) / 4) * ((D / f)**2)
         return toa
 
 
@@ -134,7 +135,7 @@ class opticalPhase(initIsm):
                 # 1. point by point mult with isrf NORMALIZED
                 aux = toa_i * isrf_n
                 # 2. then sum the resulting vector
-                sum = np.sum(aux)
+                aux_sum = np.sum(aux)
                 # 3. then assign to the toa[ialt, iact] position
-                toa[ialt, iact] = sum
+                toa[ialt, iact] = aux_sum
         return toa
