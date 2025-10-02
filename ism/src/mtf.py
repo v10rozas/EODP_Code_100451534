@@ -69,7 +69,7 @@ class mtf:
 
         # Calculate the System MTF
         self.logger.debug("Calculation of the Sysmtem MTF by multiplying the different contributors")
-        Hsys = 1 # dummy
+        Hsys = Hdiff * Hdefoc * Hwfe * Hdet * Hsmear * Hmotion
 
         # Plot cuts ACT/ALT of the MTF
         self.plotMtf(Hdiff, Hdefoc, Hwfe, Hdet, Hsmear, Hmotion, Hsys, nlines, ncolumns, fnAct, fnAlt, directory, band)
@@ -116,17 +116,6 @@ class mtf:
 
         return fn2D, fr2D, fnAct, fnAlt
 
-    def mtfDiffract(self, fr2D):
-        """
-        Optics Diffraction MTF
-        :param fr2D: 2D relative frequencies (f/fc), where fc is the optics cut-off frequency
-        :return: diffraction MTF
-        """
-        #TODO
-        Hdiff = (2 / math.pi) * (np.arccos(fr2D) - (fr2D * np.sqrt(1 - (fr2D**2))))
-        return Hdiff
-
-
     def mtfDefocus(self, fr2D, defocus, focal, D):
         """
         Defocus MTF
@@ -140,6 +129,7 @@ class mtf:
         x = math.pi * defocus * fr2D * (1 - fr2D)
         Hdefoc = (2 * j1(x)) / x
         return Hdefoc
+
 
     def mtfWfeAberrations(self, fr2D, lambd, kLF, wLF, kHF, wHF):
         """
@@ -155,6 +145,16 @@ class mtf:
         #TODO
         Hwfe = np.exp((-fr2D) * (1 - fr2D) * ((kLF * ((wLF / lambd)**2)) + (kHF * ((wHF / lambd)**2))))
         return Hwfe
+
+    def mtfDiffract(self, fr2D):
+        """
+        Optics Diffraction MTF
+        :param fr2D: 2D relative frequencies (f/fc), where fc is the optics cut-off frequency
+        :return: diffraction MTF
+        """
+        #TODO
+        Hdiff = (2 / math.pi) * (np.arccos(fr2D) - (fr2D * np.sqrt(1 - (fr2D**2))))
+        return Hdiff
 
     def mtfDetector(self, fn2D):
         """
@@ -175,6 +175,8 @@ class mtf:
         :return: Smearing MTF
         """
         #TODO
+        Hsmear_1D = np.sinc(ksmear * fnAlt)
+        Hsmear = np.tile(Hsmear_1D[:, np.newaxis], (1, ncolumns))
         return Hsmear
 
     def mtfMotion(self, fn2D, kmotion):
@@ -185,9 +187,10 @@ class mtf:
         :return: detector MTF
         """
         #TODO
+        Hmotion = np.sinc(kmotion * fn2D)
         return Hmotion
 
-    def plotMtf(self,Hdiff, Hdefoc, Hwfe, Hdet, Hsmear, Hmotion, Hsys, nlines, ncolumns, fnAct, fnAlt, directory, band):
+    def plotMtf(self, Hdiff, Hdefoc, Hwfe, Hdet, Hsmear, Hmotion, Hsys, nlines, ncolumns, fnAct, fnAlt, directory, band):
         """
         Plotting the system MTF and all of its contributors
         :param Hdiff: Diffraction MTF
@@ -206,5 +209,86 @@ class mtf:
         :return: N/A
         """
         #TODO
+        # --- ACT slice (corte central en ALT) ---
+        center_alt = nlines // 2
+        Hdiff_act = Hdiff[center_alt, :]
+        Hdefoc_act = Hdefoc[center_alt, :]
+        Hwfe_act = Hwfe[center_alt, :]
+        Hdet_act = Hdet[center_alt, :]
+        Hsmear_act = Hsmear[center_alt, :]
+        Hmotion_act = Hmotion[center_alt, :]
+        Hsys_act = Hsys[center_alt, :]
 
+        # Filtrar frecuencias positivas en ACT
+        mask_act = fnAct >= 0
+        fnAct_pos = fnAct[mask_act]
+        Hdiff_act = Hdiff_act[mask_act]
+        Hdefoc_act = Hdefoc_act[mask_act]
+        Hwfe_act = Hwfe_act[mask_act]
+        Hdet_act = Hdet_act[mask_act]
+        Hsmear_act = Hsmear_act[mask_act]
+        Hmotion_act = Hmotion_act[mask_act]
+        Hsys_act = Hsys_act[mask_act]
 
+        # --- ALT slice (corte central en ACT) ---
+        center_act = ncolumns // 2
+        Hdiff_alt = Hdiff[:, center_act]
+        Hdefoc_alt = Hdefoc[:, center_act]
+        Hwfe_alt = Hwfe[:, center_act]
+        Hdet_alt = Hdet[:, center_act]
+        Hsmear_alt = Hsmear[:, center_act]
+        Hmotion_alt = Hmotion[:, center_act]
+        Hsys_alt = Hsys[:, center_act]
+
+        # Filtrar frecuencias positivas en ALT
+        mask_alt = fnAlt >= 0
+        fnAlt_pos = fnAlt[mask_alt]
+        Hdiff_alt = Hdiff_alt[mask_alt]
+        Hdefoc_alt = Hdefoc_alt[mask_alt]
+        Hwfe_alt = Hwfe_alt[mask_alt]
+        Hdet_alt = Hdet_alt[mask_alt]
+        Hsmear_alt = Hsmear_alt[mask_alt]
+        Hmotion_alt = Hmotion_alt[mask_alt]
+        Hsys_alt = Hsys_alt[mask_alt]
+
+        # ---------- FIGURA ACT ----------
+        plt.figure(figsize=(8, 6))
+        plt.plot(fnAct_pos, Hdiff_act, label="Diffraction MTF")
+        plt.plot(fnAct_pos, Hdefoc_act, label="Defocus MTF")
+        plt.plot(fnAct_pos, Hwfe_act, label="WFE Aberrations MTF")
+        plt.plot(fnAct_pos, Hdet_act, label="Detector MTF")
+        plt.plot(fnAct_pos, Hsmear_act, label="Smearing MTF")
+        plt.plot(fnAct_pos, Hmotion_act, label="Motion blur MTF")
+        plt.plot(fnAct_pos, Hsys_act, 'k', linewidth=2, label="System MTF")
+        plt.axvline(0.5, color='k', linestyle='--', label="f Nyquist")
+
+        plt.xlabel("Spatial frequencies f/(1/w) [-]")
+        plt.ylabel("MTF")
+        plt.title("System MTF - slice ACT")
+        plt.legend(loc="best")
+        plt.grid(True)
+
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        plt.savefig(os.path.join(directory, f"System_MTF_ACT_{band}.png"), dpi=300)
+        plt.close()
+
+        # ---------- FIGURA ALT ----------
+        plt.figure(figsize=(8, 6))
+        plt.plot(fnAlt_pos, Hdiff_alt, label="Diffraction MTF")
+        plt.plot(fnAlt_pos, Hdefoc_alt, label="Defocus MTF")
+        plt.plot(fnAlt_pos, Hwfe_alt, label="WFE Aberrations MTF")
+        plt.plot(fnAlt_pos, Hdet_alt, label="Detector MTF")
+        plt.plot(fnAlt_pos, Hsmear_alt, label="Smearing MTF")
+        plt.plot(fnAlt_pos, Hmotion_alt, label="Motion blur MTF")
+        plt.plot(fnAlt_pos, Hsys_alt, 'k', linewidth=2, label="System MTF")
+        plt.axvline(0.5, color='k', linestyle='--', label="f Nyquist")
+
+        plt.xlabel("Spatial frequencies f/(1/w) [-]")
+        plt.ylabel("MTF")
+        plt.title("System MTF - slice ALT")
+        plt.legend(loc="best")
+        plt.grid(True)
+
+        plt.savefig(os.path.join(directory, f"System_MTF_ALT_{band}.png"), dpi=300)
+        plt.close()
