@@ -156,15 +156,16 @@ class mtf:
         Hwfe = np.exp((-fr2D) * (1 - fr2D) * ((kLF * ((wLF / lambd)**2)) + (kHF * ((wHF / lambd)**2))))
         return Hwfe
 
-    def mtfDetector(self,fn2D):
+    def mtfDetector(self, fn2D):
         """
         Detector MTF
         :param fnD: 2D normalised frequencies (f/(1/w))), where w is the pixel width
         :return: detector MTF
         """
         #TODO
+        Hdet = np.abs(np.sinc(fn2D))
         return Hdet
-    
+
     def mtfSmearing(self, fnAlt, ncolumns, ksmear):
         """
         Smearing MTF
