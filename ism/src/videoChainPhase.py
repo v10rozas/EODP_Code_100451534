@@ -72,4 +72,14 @@ class videoChainPhase(initIsm):
         max_digital = (2**bit_depth) - 1
         toa_dn = np.round((toa / (max_voltage - min_voltage)) * max_digital)
         toa_dn = np.clip(toa_dn, 0, max_digital)
+
+        saturated_high = toa_dn == max_digital
+        saturated_low = toa_dn == 0
+        saturated_mask = saturated_high | saturated_low
+        saturated_percentage = 100 * np.sum(saturated_mask) / toa_dn.size
+
+        if saturated_percentage==0:
+            print("There are no saturated pixels.")
+        else:
+            print(f"There are saturated pixels: {saturated_percentage:.2f}%")
         return toa_dn
