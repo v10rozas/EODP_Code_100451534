@@ -63,6 +63,9 @@ class l1c(initL1c):
         :return: L1C radiances, L1C latitude and longitude in degrees
         '''
         #TODO
+
+        # This level does not need to be done
+
         return lat_l1c, lon_l1c, toa_l1c
 
     def checkSize(self, lat,toa):
